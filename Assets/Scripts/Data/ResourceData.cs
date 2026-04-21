@@ -15,11 +15,42 @@ public class ResourceData : ScriptableObject
 #if UNITY_EDITOR
     private void OnValidate()
     {
+        // Generate if missing
         if (string.IsNullOrEmpty(guid))
         {
             guid = Guid.NewGuid().ToString();
             UnityEditor.EditorUtility.SetDirty(this);
         }
+    }
+
+    private void OnEnable()
+    {
+        CheckDuplicateID();
+    }
+
+    private void CheckDuplicateID()
+    {
+        var all = Resources.FindObjectsOfTypeAll<ResourceData>();
+
+        foreach (var other in all)
+        {
+            if (other != this && other.ID == this.ID)
+            {
+                Debug.LogWarning($"⚠️ Duplicate ID detected on {name}. Regenerating...");
+
+                guid = Guid.NewGuid().ToString();
+                UnityEditor.EditorUtility.SetDirty(this);
+            }
+        }
+    }
+
+    // 🧪 Manual fix button
+    [ContextMenu("Force Regenerate ID")]
+    public void ForceRegenerateID()
+    {
+        guid = Guid.NewGuid().ToString();
+        UnityEditor.EditorUtility.SetDirty(this);
+        Debug.Log($"🔄 New ID generated for {resourceName}");
     }
 #endif
 }

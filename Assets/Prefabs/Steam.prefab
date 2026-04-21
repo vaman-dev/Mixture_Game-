@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 192203609098669864}
   - component: {fileID: 7183454693936565774}
   - component: {fileID: 2832166254708088233}
+  - component: {fileID: -2505522598055161327}
   m_Layer: 6
   m_Name: Steam
   m_TagString: Untagged
@@ -154,3 +155,22 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &-2505522598055161327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 452640443788472088}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e57863255615da45819de657b9fb34c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickupItem
+  rb: {fileID: 2832166254708088233}
+  colliders:
+  - {fileID: 192203609098669864}
+  itemType: 5
+  resourceObject: {fileID: 7183454693936565774}
+  isHeld: 0
+  isPlaced: 0
