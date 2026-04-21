@@ -1,139 +1,115 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PlayerInteractor : MonoBehaviour
 {
-    public float interactRadius = 2f;
+    public float pickupRadius = 2f;
+    public float slotRadius = 2f;
+
     public LayerMask pickupLayer;
     public LayerMask slotLayer;
-    public Transform holdPoint;
 
-    private GameObject heldObject;
+    public Transform pickupPoint;
+    public Transform slotPoint;
+
+    public PlayerHoldController holdController;
+
     private PlayerInputActions input;
-
-    // Gizmo debug variables
-    private Color gizmoColor = Color.red;
-    private bool objectFound = false;
-    private bool slotFound = false;
 
     private void Awake()
     {
         input = new PlayerInputActions();
-        input.Player.Interact.performed += _ => Interact();
+        input.Player.Interact.performed += _ => HandleInteract();
     }
 
     private void OnEnable() => input.Enable();
     private void OnDisable() => input.Disable();
 
-    void Update()
+    void HandleInteract()
     {
-        // Update gizmo debug information
-        UpdateGizmoDebug();
-    }
+        Debug.Log("🟢 Interact pressed");
 
-    void UpdateGizmoDebug()
-    {
-        // Reset flags
-        objectFound = false;
-        slotFound = false;
-
-        // Check for pickup objects
-        Collider[] pickupHits = Physics.OverlapSphere(transform.position, interactRadius, pickupLayer);
-        if (pickupHits.Length > 0)
+        if (!holdController.HasItem())
         {
-            objectFound = true;
-        }
-
-        // Check for slot objects
-        Collider[] slotHits = Physics.OverlapSphere(transform.position, interactRadius, slotLayer);
-        if (slotHits.Length > 0)
-        {
-            slotFound = true;
-        }
-
-        // Update gizmo color based on detection
-        if (slotFound)
-        {
-            gizmoColor = Color.yellow;  // Yellow: slot found
-        }
-        else if (objectFound)
-        {
-            gizmoColor = Color.green;   // Green: object found
-        }
-        else
-        {
-            gizmoColor = Color.red;     // Red: nothing found
-        }
-    }
-
-    void Interact()
-    {
-        if (heldObject == null)
             TryPickup();
+        }
         else
-            TryDrop();
+        {
+            TryPlaceOrDrop();
+        }
     }
 
     void TryPickup()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, interactRadius, pickupLayer);
+        Debug.Log("🔍 Searching pickup...");
 
-        if (hits.Length == 0) return;
+        Collider[] hits = Physics.OverlapSphere(pickupPoint.position, pickupRadius, pickupLayer);
 
-        var obj = hits[0];
-
-        if (obj.TryGetComponent<ResourceObject>(out var resource))
-        {
-            heldObject = obj.gameObject;
-
-            heldObject.transform.SetParent(holdPoint);
-            heldObject.transform.localPosition = Vector3.zero;
-
-            Rigidbody rb = heldObject.GetComponent<Rigidbody>();
-            if (rb)
-            {
-                rb.isKinematic = true;
-                rb.useGravity = false;
-            }
-
-            Debug.Log($"🟢 Picked: {resource.data.resourceName}");
-        }
-    }
-
-    void TryDrop()
-    {
-        Debug.Log("🔽 Trying to drop");
-
-        Collider[] hits = Physics.OverlapSphere(transform.position, interactRadius, slotLayer);
-
-        Debug.Log("Slots found: " + hits.Length);
+        PickupItem best = null;
+        float minDist = float.MaxValue;
 
         foreach (var hit in hits)
         {
-            Debug.Log("Found slot: " + hit.name);
+            var item = hit.GetComponentInParent<PickupItem>();
+            if (item == null) continue;
 
-            if (hit.TryGetComponent<MixSlot>(out var slot))
+            float dist = Vector3.Distance(pickupPoint.position, item.transform.position);
+            if (dist < minDist)
             {
-                if (slot.TryPlace(heldObject))
-                {
-                    Debug.Log("✅ Placed into slot");
-
-                    heldObject = null;
-                    return;
-                }
+                minDist = dist;
+                best = item;
             }
         }
 
-        Debug.Log("❌ No slot found, dropping on ground");
+        if (best != null)
+        {
+            holdController.PickItem(best);
+        }
+        else
+        {
+            Debug.Log("❌ No pickup found");
+        }
     }
 
-    // Gizmo visualization for debugging
-    private void OnDrawGizmos()
+    void TryPlaceOrDrop()
     {
-        // Set the gizmo color based on current state
-        Gizmos.color = gizmoColor;
+        Debug.Log("🔍 Searching slot...");
 
-        // Draw the interaction radius sphere
-        Gizmos.DrawWireSphere(transform.position, interactRadius);
+        Collider[] hits = Physics.OverlapSphere(slotPoint.position, slotRadius, slotLayer);
+
+        PlacementSlot bestSlot = null;
+        float minDist = float.MaxValue;
+
+        foreach (var hit in hits)
+        {
+            var slot = hit.GetComponentInParent<PlacementSlot>();
+            if (slot == null) continue;
+
+            Debug.Log($"🎯 Slot candidate: {slot.name}");
+
+            if (!slot.CanAccept(holdController.CurrentItem))
+            {
+                Debug.Log($"❌ Slot rejected item");
+                continue;
+            }
+
+            float dist = Vector3.Distance(slotPoint.position, slot.snapPoint.position);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                bestSlot = slot;
+            }
+        }
+
+        if (bestSlot != null)
+        {
+            Debug.Log($"📦 Placing into slot: {bestSlot.name}");
+            holdController.PlaceItem(bestSlot);
+        }
+        else
+        {
+            Debug.Log("❌ No valid slot → dropping");
+            holdController.DropHeldItem();
+        }
     }
 }

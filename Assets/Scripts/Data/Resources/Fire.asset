@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ResourceData
   resourceName: Fire
   prefab: {fileID: 4621357641969571966, guid: 8812986bfd072a04d8061a17cf8eb967, type: 3}
-  guid: c11789a2-f398-4270-83cd-97c4c82140aa
+  guid: 683fe79d-45ae-4c5c-a58f-8aabcee9505d
