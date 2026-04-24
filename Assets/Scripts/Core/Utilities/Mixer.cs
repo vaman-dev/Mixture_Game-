@@ -13,67 +13,61 @@ public class Mixer : MonoBehaviour
     {
         Debug.Log("🟡 Mix Triggered");
 
-        List<ResourceData> inputs = new List<ResourceData>();
-
-        // 🔍 Collect inputs from slots
-        foreach (var slot in slots)
+        if (CraftingManager.Instance == null)
         {
-            if (slot.isOccupied && slot.currentItem != null)
-            {
-                var resource = slot.currentItem.GetComponent<ResourceObject>();
-
-                if (resource != null)
-                {
-                    inputs.Add(resource.data);
-                    Debug.Log($"📥 Input: {resource.data.resourceName}");
-                }
-            }
-        }
-
-        // ❌ Need at least 2 inputs
-        if (inputs.Count < 2)
-        {
-            Debug.Log("❌ Need at least 2 items to mix");
+            Debug.LogError("❌ CraftingManager missing!");
             return;
         }
 
-        // 🧪 Craft result
-        var result = CraftingManager.Instance.GetResult(inputs[0], inputs[1]);
-
-        if (result != null)
+        if (outputPoint == null)
         {
-            Debug.Log($"✅ MIX SUCCESS: {inputs[0].resourceName} + {inputs[1].resourceName} = {result.resourceName}");
+            Debug.LogError("❌ OutputPoint not assigned!");
+            return;
+        }
 
-            if (result.prefab == null)
+        List<ResourceData> inputs = new List<ResourceData>();
+
+        foreach (var slot in slots)
+        {
+            if (slot.isOccupied && slot.GetData() != null)
             {
-                Debug.LogError("❌ Result prefab is NULL!");
-                return;
-            }
-
-            if (outputPoint == null)
-            {
-                Debug.LogError("❌ Output point not assigned!");
-                return;
-            }
-
-            // 📦 Spawn result
-            Instantiate(result.prefab, outputPoint.position, Quaternion.identity);
-            Debug.Log("📦 Output spawned");
-
-            // 🧹 Clear slots
-            foreach (var slot in slots)
-            {
-                if (slot.currentItem != null)
-                {
-                    Destroy(slot.currentItem.gameObject);
-                }
-
-                slot.ClearSlot();
+                inputs.Add(slot.GetData());
+                Debug.Log($"📥 Input: {slot.GetData().resourceName}");
             }
         }
-        else
+
+        if (inputs.Count < 2)
         {
-            Debug.Log($"❌ Invalid combination: {inputs[0].resourceName} + {inputs[1].resourceName}");
+            Debug.Log("❌ Need at least 2 items");
+            return;
+        }
+
+        var result = CraftingManager.Instance.GetResult(inputs[0], inputs[1]);
+
+        if (result == null)
+        {
+            Debug.Log("❌ Invalid combination");
+            return;
+        }
+
+        if (result.prefab == null)
+        {
+            Debug.LogError("❌ Result prefab missing!");
+            return;
+        }
+
+        Instantiate(result.prefab, outputPoint.position, Quaternion.identity);
+
+        Debug.Log("📦 Output spawned");
+
+        foreach (var slot in slots)
+        {
+            if (slot.currentItem != null)
+            {
+                Destroy(slot.currentItem.gameObject);
+            }
+
+            slot.ClearSlot();
         }
     }
 }
