@@ -7,7 +7,7 @@ public class PickupItem : MonoBehaviour
     public Collider[] colliders;
 
     [Header("Data")]
-    public ItemType itemType;
+    //public ItemType itemType;
     public ResourceObject resourceObject; // 🔥 IMPORTANT (for Mixer)
 
     [Header("State")]

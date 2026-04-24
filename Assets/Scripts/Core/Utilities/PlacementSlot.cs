@@ -3,12 +3,12 @@ using UnityEngine;
 public class PlacementSlot : MonoBehaviour
 {
     public Transform snapPoint;
-    public ItemType acceptedType;
 
     public bool isOccupied;
     public PickupItem currentItem;
+    public ResourceData storedData; // 🔥 NEW
 
-    // ✅ CHECK IF SLOT CAN ACCEPT ITEM
+    // ✅ SLOT ACCEPTS ANY ITEM NOW
     public bool CanAccept(PickupItem item)
     {
         if (isOccupied)
@@ -19,10 +19,19 @@ public class PlacementSlot : MonoBehaviour
 
         if (item == null) return false;
 
-        return item.itemType == acceptedType || acceptedType == ItemType.None;
+        // 🔥 NEW: enforce resource requirement
+        var resource = item.GetComponent<ResourceObject>();
+
+        if (resource == null || resource.data == null)
+        {
+            Debug.LogWarning("⚠️ Item is not a valid resource");
+            return false;
+        }
+
+        return true;
     }
 
-    // ✅ PLACE ITEM INTO SLOT
+    // ✅ PLACE ITEM
     public bool PlaceItem(PickupItem item)
     {
         if (!CanAccept(item)) return false;
@@ -31,32 +40,57 @@ public class PlacementSlot : MonoBehaviour
         currentItem = item;
         isOccupied = true;
 
-        Debug.Log($"📦 Slot filled: {item.name}");
+        // 🔥 FETCH DATA FROM RESOURCE OBJECT
+        var resource = item.GetComponent<ResourceObject>();
+        if (resource != null)
+        {
+            storedData = resource.data;
+            Debug.Log($"📦 Slot filled with: {storedData.resourceName}");
+        }
+        else
+        {
+            Debug.LogError("❌ ResourceObject missing on item!");
+        }
+
         return true;
     }
 
-    // ✅ REMOVE ITEM (🔥 CRITICAL FIX)
+    // ✅ REMOVE ITEM
     public void RemoveItem(PickupItem item)
     {
-        // Safety check → only remove if it's the SAME object
+        if (currentItem == null)
+        {
+            Debug.LogWarning("⚠️ Slot already empty");
+            return;
+        }
+
+        // 🔥 SAFE CHECK
         if (currentItem != item)
         {
-            Debug.LogWarning("⚠️ Tried removing wrong item from slot");
+            Debug.LogWarning("⚠️ Wrong item trying to clear slot");
             return;
         }
 
         Debug.Log($"🟡 Removing item from slot: {item.name}");
 
         currentItem = null;
+        storedData = null;
         isOccupied = false;
     }
 
-    // OPTIONAL (force clear)
+    // ✅ CLEAR SLOT
     public void ClearSlot()
     {
         Debug.Log("🟡 Slot cleared");
 
         currentItem = null;
+        storedData = null;
         isOccupied = false;
+    }
+
+    // 🔥 HELPER (VERY USEFUL)
+    public ResourceData GetData()
+    {
+        return storedData;
     }
 }
