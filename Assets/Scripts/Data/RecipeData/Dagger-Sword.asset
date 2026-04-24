@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   inputA: {fileID: 11400000, guid: e46164fc1a0e5d14eab646eaa4132312, type: 2}
   inputB: {fileID: 11400000, guid: e46164fc1a0e5d14eab646eaa4132312, type: 2}
-  output: {fileID: 11400000, guid: b878240932df9cf4588e01b780ed1f01, type: 2}
+  output: {fileID: 11400000, guid: 1969936aa1e5b93489e4819bbc3ecb87, type: 2}
